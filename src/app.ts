@@ -1,8 +1,13 @@
-import express, { Application, NextFunction, Request, Response } from "express";
+import express, { Application, Request, Response } from "express";
 import cors from "cors";
 // import { borrowBookRoutes } from "./app/modules/library/borrow/borrow.route";
 import { bookRoutes } from "./app/modules/library/book/book.route";
 import { borrowBookRoutes } from "./app/modules/library/borrow/borrow.route";
+// import { UserRoutes } from "./app/modules/ph-tour/user/user.routes";
+import { router } from "./app/routes";
+// import { envVars } from "./config/env";
+import { globalErrorHandler } from "./app/middlewares/globalErrorHandler";
+import notFound from "./app/middlewares/notFound";
 
 const app: Application = express();
 
@@ -10,12 +15,15 @@ const app: Application = express();
 app.use(cors({ origin: "*" }));
 
 // Parse JSON and URL-encoded bodies
+
+//.json body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use("/api/books", bookRoutes);
 app.use("/api/borrow", borrowBookRoutes);
+app.use("/api/v1", router);
 
 // Root route
 app.get("/", (req: Request, res: Response) => {
@@ -26,30 +34,8 @@ app.get("/", (req: Request, res: Response) => {
 //unCaught error handler
 //single termination sigterm
 
-// 404 Handler
-app.use((req: Request, res: Response, next: NextFunction) => {
-  res.status(404).json({
-    success: false,
-    message: "API not found",
-  });
-  next();
-});
-
 // Error-handling middleware
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  if (err.name === "ValidationError") {
-    return res.status(400).json({
-      success: false,
-      message: "Validation Error",
-      errors: err.message,
-    });
-  }
-  res.status(500).json({
-    success: false,
-    message: "Internal Server Error",
-    error: err.message,
-  });
-  next();
-});
-
+app.use(globalErrorHandler);
+// 404 Handler
+app.use(notFound);
 export default app;
